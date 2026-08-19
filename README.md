@@ -1,5 +1,6 @@
 \# Main DevOps Project
-microservices-devops-pipeline : End-to-End CI/CD & Kubernetes Orchestration
+
+\microservices-devops-pipeline : End-to-End CI/CD & Kubernetes Orchestration
 
 
 This is a DevOps project focused on Docker, CI/CD, Kubernetes, Terraform, and observability.
