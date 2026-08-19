@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: devops
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    ports:
+      - "8081:8080" # Mapped to 8081 because Oracle blocks 8080 on your PC
+    environment:
+      DB_HOST: db
+      DB_NAME: devops
+      DB_USER: postgres
+      DB_PASSWORD: password
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: ./worker
+    environment:
+      DB_HOST: db
+      DB_NAME: devops
+      DB_USER: postgres
+      DB_PASSWORD: password
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
