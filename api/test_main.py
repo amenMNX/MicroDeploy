@@ -2,7 +2,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 # Patch wait_for_db before importing app so lifespan doesn't try to connect
-with patch("main.wait_for_db", return_value=None):
+with patch("main.wait_for_db"):
     from main import app
 
 client = TestClient(app)

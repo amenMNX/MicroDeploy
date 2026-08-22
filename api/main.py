@@ -1,14 +1,24 @@
-import os, time, psycopg2
+import os
+import time
 from contextlib import asynccontextmanager
+
+import psycopg2
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+
+class DatabaseUnavailableError(Exception):
+    """Raised when the database cannot be reached after retries."""
+    pass
+
+
 DB_PARAMS = {
     "host": os.getenv("DB_HOST", "db"),
-    "database": os.getenv("DB_NAME", "devops"),
+    "database": os.getenv("DB_NAME", "microdeploy"),
     "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD", "password")
+    "password": os.getenv("DB_PASSWORD", "password"),
 }
+
 
 def wait_for_db():
     for _ in range(10):
@@ -18,7 +28,7 @@ def wait_for_db():
             return
         except psycopg2.OperationalError:
             time.sleep(2)
-    raise Exception("Database not available")
+    raise DatabaseUnavailableError("Database not available")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
