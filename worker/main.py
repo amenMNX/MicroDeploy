@@ -1,4 +1,7 @@
-import os ,time ,psycopg2
+import os
+import time
+
+import psycopg2
 
 DB_PARAMS = {
     "host": os.getenv("DB_HOST", "db"),
@@ -33,7 +36,7 @@ def main():
             conn.commit()
             cur.close()
             conn.close()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"Error processing task: {e}")
         time.sleep(3)
 if __name__ == "__main__":
