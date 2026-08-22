@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  API_IMAGE: ghcr.io/amenMNX/microdeploy-api
-  WORKER_IMAGE: ghcr.io/amenMNX/microdeploy-worker
+  API_IMAGE: ghcr.io/amenmnx/microdeploy-api
+  WORKER_IMAGE: ghcr.io/amenmnx/microdeploy-worker
 
 jobs:
   test-and-lint:
