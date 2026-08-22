@@ -5,7 +5,7 @@ import psycopg2
 
 DB_PARAMS = {
     "host": os.getenv("DB_HOST", "db"),
-    "database": os.getenv("DB_NAME", "devops"),
+    "database": os.getenv("DB_NAME", "microdeploy"), 
     "user": os.getenv("DB_USER", "postgres"),
     "password": os.getenv("DB_PASSWORD", "password")
 }

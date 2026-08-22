@@ -13,7 +13,7 @@ class DatabaseUnavailableError(Exception):
 
 DB_PARAMS = {
     "host": os.getenv("DB_HOST", "db"),
-    "database": os.getenv("DB_NAME", "microdeploy"),
+    "database": os.getenv("DB_NAME", "microdeploy"), 
     "user": os.getenv("DB_USER", "postgres"),
     "password": os.getenv("DB_PASSWORD", "password"),
 }
