@@ -1,17 +1,15 @@
-name: CI/CD Pipeline
+name: MicroDeploy CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
   pull_request:
-    branches:
-      - main
+    branches: ["main"]
 
 env:
   REGISTRY: ghcr.io
-  API_IMAGE: ghcr.io/amenMNX/main-devops-api
-  WORKER_IMAGE: ghcr.io/amenMNX/main-devops-worker
+  API_IMAGE: ghcr.io/amenmnx/microdeploy-api
+  WORKER_IMAGE: ghcr.io/amenmnx/microdeploy-worker
 
 jobs:
   test-and-lint:
@@ -33,13 +31,11 @@ jobs:
           pip install pytest httpx ruff
 
       - name: Lint API
-        run: |
-          ruff check api --ignore E501
+        run: ruff check api --ignore E501
 
       - name: Run API tests
         working-directory: api
-        run: |
-          pytest -q
+        run: pytest -q
 
       - name: Install Worker dependencies
         run: |
@@ -47,13 +43,11 @@ jobs:
           pip install pytest ruff
 
       - name: Lint Worker
-        run: |
-          ruff check worker --ignore E501
+        run: ruff check worker --ignore E501
 
       - name: Run Worker tests
         working-directory: worker
-        run: |
-          pytest -q
+        run: pytest -q
 
   build-scan-push:
     needs: test-and-lint
@@ -76,12 +70,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build API image
-        run: |
-          docker build -t ${{ env.API_IMAGE }}:${{ github.sha }} ./api
+        run: docker build -t ${{ env.API_IMAGE }}:${{ github.sha }} ./api
 
       - name: Build Worker image
-        run: |
-          docker build -t ${{ env.WORKER_IMAGE }}:${{ github.sha }} ./worker
+        run: docker build -t ${{ env.WORKER_IMAGE }}:${{ github.sha }} ./worker
 
       - name: Scan API image with Trivy
         uses: aquasecurity/trivy-action@master

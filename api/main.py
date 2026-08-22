@@ -1,8 +1,7 @@
 import os, time, psycopg2
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
-
-app = FastAPI(title="Main DevOps API")
 
 DB_PARAMS = {
     "host": os.getenv("DB_HOST", "db"),
@@ -11,7 +10,6 @@ DB_PARAMS = {
     "password": os.getenv("DB_PASSWORD", "password")
 }
 
-# Wait for DB to boot up
 def wait_for_db():
     for _ in range(10):
         try:
@@ -22,12 +20,19 @@ def wait_for_db():
             time.sleep(2)
     raise Exception("Database not available")
 
-@app.on_event("startup")
-def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     wait_for_db()
+    yield
+
+app = FastAPI(title="Main DevOps API", lifespan=lifespan)
 
 class Task(BaseModel):
     title: str
+
+@app.get("/")
+def root():
+    return {"status": "running", "service": "api"}
 
 @app.post("/tasks")
 def create_task(task: Task):
