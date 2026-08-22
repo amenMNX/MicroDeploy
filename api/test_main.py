@@ -1,4 +1,5 @@
 from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
 # Patch wait_for_db before importing app so lifespan doesn't try to connect

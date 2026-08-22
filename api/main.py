@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 class DatabaseUnavailableError(Exception):
     """Raised when the database cannot be reached after retries."""
-    pass
 
 
 DB_PARAMS = {
