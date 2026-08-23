@@ -41,6 +41,11 @@ app = FastAPI(title="MicroDeploy API", lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)
 
 
+@app.get("/")
+def root():
+    return {"message": "MicroDeploy API", "status": "running"}
+
+
 class Task(BaseModel):
     title: str
 
