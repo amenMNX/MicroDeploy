@@ -6,6 +6,8 @@ import psycopg2
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 
 class DatabaseUnavailableError(Exception):
     """Raised when the database cannot be reached after retries."""
@@ -35,6 +37,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="Main DevOps API", lifespan=lifespan)
+Instrumentator().instrument(app).expose(app)
 
 class Task(BaseModel):
     title: str

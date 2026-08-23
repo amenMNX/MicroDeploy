@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microdeploy-worker
+  namespace: microdeploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: microdeploy-worker
+  template:
+    metadata:
+      labels:
+        app: microdeploy-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/amenmnx/microdeploy-worker:latest
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: microdeploy-config
+                  key: DB_HOST
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: microdeploy-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: microdeploy-config
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: microdeploy-secret
+                  key: DB_PASSWORD

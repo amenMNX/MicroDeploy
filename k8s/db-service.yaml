@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: microdeploy-db
+  namespace: microdeploy
+spec:
+  selector:
+    app: microdeploy-db
+  ports:
+    - port: 5432
+      targetPort: 5432

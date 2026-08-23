@@ -6,3 +6,6 @@ __pycache__/
 .vscode/
 .idea/
 postgres_data/
+.terraform/
+*.tfstate
+*.tfstate.*

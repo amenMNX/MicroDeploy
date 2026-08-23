@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: microdeploy-config
+  namespace: microdeploy
+data:
+  DB_HOST: "microdeploy-db"
+  DB_NAME: "microdeploy"
+  DB_USER: "postgres"
