@@ -4,9 +4,8 @@ from contextlib import asynccontextmanager
 
 import psycopg2
 from fastapi import FastAPI
-from pydantic import BaseModel
-
 from prometheus_fastapi_instrumentator import Instrumentator
+from pydantic import BaseModel
 
 
 class DatabaseUnavailableError(Exception):
@@ -15,7 +14,7 @@ class DatabaseUnavailableError(Exception):
 
 DB_PARAMS = {
     "host": os.getenv("DB_HOST", "db"),
-    "database": os.getenv("DB_NAME", "microdeploy"), 
+    "database": os.getenv("DB_NAME", "microdeploy"),
     "user": os.getenv("DB_USER", "postgres"),
     "password": os.getenv("DB_PASSWORD", "password"),
 }
@@ -31,31 +30,35 @@ def wait_for_db():
             time.sleep(2)
     raise DatabaseUnavailableError("Database not available")
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     wait_for_db()
     yield
 
-app = FastAPI(title="Main DevOps API", lifespan=lifespan)
+
+app = FastAPI(title="MicroDeploy API", lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)
+
 
 class Task(BaseModel):
     title: str
 
-@app.get("/")
-def root():
-    return {"status": "running", "service": "api"}
 
 @app.post("/tasks")
 def create_task(task: Task):
     conn = psycopg2.connect(**DB_PARAMS)
     cur = conn.cursor()
-    cur.execute("INSERT INTO tasks (title) VALUES (%s) RETURNING id;", (task.title,))
+    cur.execute(
+        "INSERT INTO tasks (title) VALUES (%s) RETURNING id;",
+        (task.title,),
+    )
     task_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
     return {"id": task_id, "title": task.title, "status": "pending"}
+
 
 @app.get("/tasks")
 def get_tasks():
@@ -66,6 +69,7 @@ def get_tasks():
     cur.close()
     conn.close()
     return [{"id": r[0], "title": r[1], "status": r[2]} for r in rows]
+
 
 @app.get("/health")
 def health():

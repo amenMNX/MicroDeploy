@@ -1,5 +1,5 @@
 fastapi==0.141.1
-uvicorn==0.52.3
-pydantic==2.13.4
-psycopg2-binary==2.9.9
 prometheus-fastapi-instrumentator==7.0.0
+psycopg2-binary==2.9.9
+pydantic==2.13.4
+uvicorn==0.52.3
