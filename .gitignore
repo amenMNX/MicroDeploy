@@ -1,24 +1,38 @@
-# Terraform
-infra/.terraform/
+# ── Terraform ──────────────────────────────────────────────
+# State files contain sensitive data – use a remote backend instead
 infra/terraform.tfstate
 infra/terraform.tfstate.backup
-infra/*.tfvars
-*.tfplan
+infra/.terraform/
+infra/.terraform.lock.hcl
+*.tfvars
+*.tfvars.json
 
-# Python
+# ── Kubernetes secrets ──────────────────────────────────────
+# Never commit real secret manifests
+k8s/secret.yaml
+
+# ── Python ─────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
+*.pyo
 .pytest_cache/
+.mypy_cache/
 *.egg-info/
 dist/
+build/
 .venv/
 venv/
+env/
 
-# Environment files
-.env
-.env.*
+# ── Docker ─────────────────────────────────────────────────
+.dockerignore
 
-# IDE
+# ── IDE / OS ────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
+.DS_Store
+Thumbs.db
+-e 
+# Local env overrides
+.env

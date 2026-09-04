@@ -17,6 +17,12 @@ variable "kube_context" {
   default     = "rancher-desktop"
 }
 
+variable "grafana_admin_password" {
+  description = "Grafana admin password — pass via TF_VAR_grafana_admin_password env var or -var flag. Never hardcode."
+  type        = string
+  sensitive   = true
+}
+
 provider "kubernetes" {
   config_path    = "~/.kube/config"
   config_context = var.kube_context

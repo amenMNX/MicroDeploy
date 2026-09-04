@@ -1,19 +1,23 @@
 version: '3.8'
 
+# Fix #9 — credentials come from a .env file, never hardcoded here.
+# Copy .env.example to .env and fill in real values before running.
+# The .env file is in .gitignore and must never be committed.
+
 services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: microdeploy
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB:       ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,12 +25,12 @@ services:
   api:
     build: ./api
     ports:
-      - "8080:8080"
+      - "8080:8080"    # Fix #11 — was incorrectly documented as 8081
     environment:
-      DB_HOST: db
-      DB_NAME: microdeploy
-      DB_USER: postgres
-      DB_PASSWORD: password
+      DB_HOST:     db
+      DB_NAME:     ${DB_NAME}
+      DB_USER:     ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -39,10 +43,10 @@ services:
   worker:
     build: ./worker
     environment:
-      DB_HOST: db
-      DB_NAME: microdeploy
-      DB_USER: postgres
-      DB_PASSWORD: password
+      DB_HOST:     db
+      DB_NAME:     ${DB_NAME}
+      DB_USER:     ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     depends_on:
       db:
         condition: service_healthy

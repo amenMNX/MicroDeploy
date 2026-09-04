@@ -60,7 +60,7 @@ A one-month internship-style DevOps project demonstrating containerization, CI/C
 docker compose up --build
 ```
 
-API available at http://localhost:8081
+API available at http://localhost:8080
 
 ## API Endpoints
 

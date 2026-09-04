@@ -1,19 +1,21 @@
-resource "kubernetes_namespace" "monitoring" {
+﻿resource "kubernetes_namespace" "monitoring" {
   metadata {
     name = "monitoring"
   }
 }
 
 resource "helm_release" "prometheus_stack" {
-  name       = "monitoring"
-  repository = "https://prometheus-community.github.io/helm-charts"
-  chart      = "kube-prometheus-stack"
-  namespace  = kubernetes_namespace.monitoring.metadata[0].name
-  timeout    = 900
+  name             = "monitoring"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  namespace        = kubernetes_namespace.monitoring.metadata[0].name
+  timeout          = 900
+  cleanup_on_fail  = true
+  atomic           = true
 
-  set {
+  set_sensitive {
     name  = "grafana.adminPassword"
-    value = "admin123"
+    value = var.grafana_admin_password
   }
 
   set {
@@ -25,11 +27,13 @@ resource "helm_release" "prometheus_stack" {
 }
 
 resource "helm_release" "loki_stack" {
-  name       = "loki-stack"
-  repository = "https://grafana.github.io/helm-charts"
-  chart      = "loki-stack"
-  namespace  = kubernetes_namespace.monitoring.metadata[0].name
-  timeout    = 300
+  name             = "loki-stack"
+  repository       = "https://grafana.github.io/helm-charts"
+  chart            = "loki-stack"
+  namespace        = kubernetes_namespace.monitoring.metadata[0].name
+  timeout          = 300
+  cleanup_on_fail  = true
+  atomic           = true
 
   set {
     name  = "promtail.enabled"

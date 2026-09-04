@@ -6,6 +6,11 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: standard   # Fix #14 — explicit class; avoids hanging in Pending
+                               # Change to your cluster's class if needed:
+                               # minikube → "standard"
+                               # rancher-desktop → "local-path"
+                               # cloud (GKE/EKS/AKS) → "gp2" / "premium-rwo" / etc.
   resources:
     requests:
       storage: 1Gi
