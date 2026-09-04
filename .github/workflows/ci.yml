@@ -76,7 +76,7 @@ jobs:
         run: docker build -t ${{ env.WORKER_IMAGE }}:${{ github.sha }} ./worker
 
       - name: Scan API image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
           image-ref: ${{ env.API_IMAGE }}:${{ github.sha }}
@@ -86,7 +86,7 @@ jobs:
           exit-code: "0"
 
       - name: Scan Worker image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
           image-ref: ${{ env.WORKER_IMAGE }}:${{ github.sha }}
