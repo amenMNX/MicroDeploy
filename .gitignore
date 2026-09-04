@@ -1,11 +1,24 @@
-.venv/
+# Terraform
+infra/.terraform/
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/*.tfvars
+*.tfplan
+
+# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+dist/
+.venv/
+venv/
+
+# Environment files
 .env
+.env.*
+
+# IDE
 .vscode/
 .idea/
-postgres_data/
-.terraform/
-*.tfstate
-*.tfstate.*
+*.swp

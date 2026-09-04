@@ -11,14 +11,20 @@ terraform {
   }
 }
 
+variable "kube_context" {
+  description = "kubectl context to use (e.g. rancher-desktop, minikube, kind-kind)"
+  type        = string
+  default     = "rancher-desktop"
+}
+
 provider "kubernetes" {
-  config_path = "~/.kube/config"
-  config_context = "rancher-desktop"
+  config_path    = "~/.kube/config"
+  config_context = var.kube_context
 }
 
 provider "helm" {
   kubernetes {
-    config_path = "~/.kube/config"
-    config_context = "rancher-desktop"
+    config_path    = "~/.kube/config"
+    config_context = var.kube_context
   }
 }

@@ -34,6 +34,13 @@ spec:
                 secretKeyRef:
                   name: microdeploy-secret
                   key: DB_PASSWORD
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
@@ -51,7 +58,8 @@ spec:
             periodSeconds: 10
       volumes:
         - name: postgres-storage
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: postgres-pvc
         - name: init-sql
           configMap:
             name: init-sql-config

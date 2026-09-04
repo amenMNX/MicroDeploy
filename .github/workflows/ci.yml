@@ -35,7 +35,7 @@ jobs:
 
       - name: Run API tests
         working-directory: api
-        run: pytest -q
+        run: pytest -v
 
       - name: Install Worker dependencies
         run: |
@@ -47,7 +47,7 @@ jobs:
 
       - name: Run Worker tests
         working-directory: worker
-        run: pytest -q
+        run: pytest -v
 
   build-scan-push:
     needs: test-and-lint
@@ -76,7 +76,7 @@ jobs:
         run: docker build -t ${{ env.WORKER_IMAGE }}:${{ github.sha }} ./worker
 
       - name: Scan API image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: image
           image-ref: ${{ env.API_IMAGE }}:${{ github.sha }}
@@ -86,7 +86,7 @@ jobs:
           exit-code: "0"
 
       - name: Scan Worker image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: image
           image-ref: ${{ env.WORKER_IMAGE }}:${{ github.sha }}
@@ -109,3 +109,34 @@ jobs:
         run: |
           docker push ${{ env.WORKER_IMAGE }}:${{ github.sha }}
           docker push ${{ env.WORKER_IMAGE }}:latest
+
+  deploy:
+    needs: build-scan-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Update image tags in manifests
+        run: |
+          sed -i "s|:latest|:${{ github.sha }}|g" k8s/api-deployment.yaml
+          sed -i "s|:latest|:${{ github.sha }}|g" k8s/worker-deployment.yaml
+
+      - name: Apply Kubernetes manifests
+        run: kubectl apply -f k8s/
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/microdeploy-api -n microdeploy --timeout=120s
+          kubectl rollout status deployment/microdeploy-worker -n microdeploy --timeout=120s

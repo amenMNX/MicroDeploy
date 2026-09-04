@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: devops
+      POSTGRES_DB: microdeploy
     ports:
       - "5432:5432"
     volumes:
@@ -21,21 +21,26 @@ services:
   api:
     build: ./api
     ports:
-      - "8081:8080" # Mapped to 8081 because Oracle blocks 8080 on your PC
+      - "8080:8080"
     environment:
       DB_HOST: db
-      DB_NAME: devops
+      DB_NAME: microdeploy
       DB_USER: postgres
       DB_PASSWORD: password
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   worker:
     build: ./worker
     environment:
       DB_HOST: db
-      DB_NAME: devops
+      DB_NAME: microdeploy
       DB_USER: postgres
       DB_PASSWORD: password
     depends_on:

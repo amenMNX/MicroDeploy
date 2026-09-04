@@ -16,6 +16,7 @@ spec:
       containers:
         - name: worker
           image: ghcr.io/amenmnx/microdeploy-worker:latest
+          imagePullPolicy: Always
           env:
             - name: DB_HOST
               valueFrom:
@@ -37,3 +38,10 @@ spec:
                 secretKeyRef:
                   name: microdeploy-secret
                   key: DB_PASSWORD
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
