@@ -2,10 +2,7 @@
 resource "kubernetes_namespace" "monitoring" {
   metadata {
     name = "monitoring"
-  }
-}
-
-# Prometheus + Grafana + Alertmanager, installed as one Helm chart
+  }# Pr# Prometheus + Grafana + Alertmanager, installed as one Helm chart
 # Also configures Grafana to use Loki as a datasource automatically
 resource "helm_release" "prometheus_stack" {
   name       = "monitoring"
@@ -76,6 +73,10 @@ resource "helm_release" "loki_stack" {
   set {
     name  = "prometheus.enabled"
     value = "false"
+  }
+
+  # Loki must be deployed after the namespace exists
+alue = "false"
   }
 
   # Loki must be deployed after the namespace exists
