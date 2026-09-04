@@ -109,34 +109,3 @@ jobs:
         run: |
           docker push ${{ env.WORKER_IMAGE }}:${{ github.sha }}
           docker push ${{ env.WORKER_IMAGE }}:latest
-
-  deploy:
-    needs: build-scan-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-
-      - name: Configure kubeconfig
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
-
-      - name: Update image tags in manifests
-        run: |
-          sed -i "s|:latest|:${{ github.sha }}|g" k8s/api-deployment.yaml
-          sed -i "s|:latest|:${{ github.sha }}|g" k8s/worker-deployment.yaml
-
-      - name: Apply Kubernetes manifests
-        run: kubectl apply -f k8s/
-
-      - name: Wait for rollout
-        run: |
-          kubectl rollout status deployment/microdeploy-api -n microdeploy --timeout=120s
-          kubectl rollout status deployment/microdeploy-worker -n microdeploy --timeout=120s
