@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 
 class DatabaseUnavailableError(Exception):
-    """Raised when the database cannot be reached after retries."""
+    pass
 
 
 DB_PARAMS = {
@@ -54,10 +54,7 @@ class Task(BaseModel):
 def create_task(task: Task):
     conn = psycopg2.connect(**DB_PARAMS)
     cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO tasks (title) VALUES (%s) RETURNING id;",
-        (task.title,),
-    )
+    cur.execute("INSERT INTO tasks (title) VALUES (%s) RETURNING id;", (task.title,))
     task_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
