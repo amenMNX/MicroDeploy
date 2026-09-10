@@ -4,4 +4,4 @@ ignore = ["E501"]
 
 [lint.isort]
 known-first-party = ["main"]
-src = ["api", "worker"]
+known-third-party = ["psycopg2", "fastapi", "pydantic", "uvicorn", "prometheus_fastapi_instrumentator", "pytest"]
