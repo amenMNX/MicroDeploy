@@ -8,7 +8,6 @@ from fastapi import FastAPI, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
-
 # ── Exceptions ────────────────────────────────────────────────────────────────
 
 class DatabaseUnavailableError(Exception):

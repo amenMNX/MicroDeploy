@@ -34,6 +34,8 @@ spec:
                 secretKeyRef:
                   name: microdeploy-secret
                   key: DB_PASSWORD
+            - name: PGDATA                                    # ← FIX 1: added
+              value: /var/lib/postgresql/data/pgdata
           resources:
             requests:
               cpu: "100m"
@@ -57,7 +59,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 10
       volumes:
-        - name: postgres-storage
+        - name: postgres-storage                              # ← FIX 2: removed stray mountPath
           persistentVolumeClaim:
             claimName: postgres-pvc
         - name: init-sql

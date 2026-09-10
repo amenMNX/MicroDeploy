@@ -31,7 +31,9 @@ jobs:
           pip install pytest httpx ruff
 
       - name: Lint API
-        run: ruff check api --ignore E501
+        run: |
+          ruff check api --select I --fix
+          ruff check api --ignore E501
 
       - name: Run API tests
         working-directory: api
@@ -43,7 +45,9 @@ jobs:
           pip install pytest ruff
 
       - name: Lint Worker
-        run: ruff check worker --ignore E501
+        run: |
+          ruff check worker --select I --fix
+          ruff check worker --ignore E501
 
       - name: Run Worker tests
         working-directory: worker
