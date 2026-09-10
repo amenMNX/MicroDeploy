@@ -30,7 +30,7 @@ jobs:
           pip install -r api/requirements.txt
 
       - name: Lint API
-        run: ruff check api --select E,F,I --ignore E501
+        run: ruff check api
 
       - name: Run API tests
         working-directory: api
@@ -40,7 +40,7 @@ jobs:
         run: pip install -r worker/requirements.txt
 
       - name: Lint Worker
-        run: ruff check worker --select E,F,I --ignore E501
+        run: ruff check worker
 
       - name: Run Worker tests
         working-directory: worker
@@ -69,7 +69,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push API image
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          push: false
+          load: true
+          tags: |
+            ${{ env.API_IMAGE }}:${{ github.sha }}
+            ${{ env.API_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan API image with Trivy
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: ${{ env.API_IMAGE }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Push API image
         uses: docker/build-push-action@v6
         with:
           context: ./api
@@ -80,7 +101,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push Worker image
+      - name: Build Worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./worker
+          push: false
+          load: true
+          tags: |
+            ${{ env.WORKER_IMAGE }}:${{ github.sha }}
+            ${{ env.WORKER_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Worker image with Trivy
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: ${{ env.WORKER_IMAGE }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Push Worker image
         uses: docker/build-push-action@v6
         with:
           context: ./worker
@@ -90,23 +132,3 @@ jobs:
             ${{ env.WORKER_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Scan API image with Trivy
-        uses: aquasecurity/trivy-action@0.30.0
-        with:
-          scan-type: image
-          image-ref: ${{ env.API_IMAGE }}:${{ github.sha }}
-          format: table
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-
-      - name: Scan Worker image with Trivy
-        uses: aquasecurity/trivy-action@0.30.0
-        with:
-          scan-type: image
-          image-ref: ${{ env.WORKER_IMAGE }}:${{ github.sha }}
-          format: table
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
