@@ -3,7 +3,6 @@ import time
 
 import psycopg2
 
-
 # ── Exceptions ────────────────────────────────────────────────────────────────
 
 class DatabaseUnavailableError(Exception):

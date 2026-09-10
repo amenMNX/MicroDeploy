@@ -1,5 +1,36 @@
-﻿* text=auto eol=lf
-*.exe binary
+# Enforce LF line endings for all text files
+* text=auto eol=lf
+
+# Binary files
 *.png binary
 *.jpg binary
+*.jpeg binary
+*.gif binary
 *.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.pyc binary
+*.pyo binary
+*.pyd binary
+*.class binary
+*.jar binary
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+
+# Shell scripts must stay LF
+*.sh text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf

@@ -6,7 +6,6 @@ import pytest
 import main
 from main import DatabaseUnavailableError, process_one, wait_for_db
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _make_conn(fetchone_val=None):
