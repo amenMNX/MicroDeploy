@@ -8,4 +8,8 @@ WORKDIR /app
 COPY --from=builder /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
 COPY main.py .
-CMD ["python", "main.py" ]
+
+RUN addgroup --system app && adduser --system --ingroup app app
+USER app
+
+CMD ["python", "main.py"]

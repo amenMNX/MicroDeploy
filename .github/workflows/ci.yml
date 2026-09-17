@@ -86,7 +86,7 @@ jobs:
         with:
           image-ref: ${{ env.API_IMAGE }}:${{ github.sha }}
           format: table
-          severity: CRITICAL
+          severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
 
@@ -118,7 +118,7 @@ jobs:
         with:
           image-ref: ${{ env.WORKER_IMAGE }}:${{ github.sha }}
           format: table
-          severity: CRITICAL
+          severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
 
