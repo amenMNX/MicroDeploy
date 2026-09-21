@@ -1,6 +1,6 @@
 # MicroDeploy — End-to-End DevOps Pipeline
 
-A one-month internship-style DevOps project demonstrating containerization, CI/CD, Kubernetes orchestration, infrastructure as code, and observability on a minimal multi-service application.
+A DevOps project demonstrating containerization, CI/CD, Kubernetes orchestration, infrastructure as code, and observability on a minimal multi-service application.
 
 ## Stack
 
@@ -15,6 +15,8 @@ A one-month internship-style DevOps project demonstrating containerization, CI/C
 | Logging | Loki + Promtail |
 | Registry | GitHub Container Registry (GHCR) |
 | Security | Trivy image scanning |
+
+
 
 ## Project Structure
 
