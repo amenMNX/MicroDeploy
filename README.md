@@ -16,6 +16,7 @@ A DevOps project demonstrating containerization, CI/CD, Kubernetes orchestration
 | Registry | GitHub Container Registry (GHCR) |
 | Security | Trivy image scanning |
 
+<img width="6817" height="4437" alt="diagram" src="https://github.com/user-attachments/assets/ab6750e6-8eed-4dc2-9b72-1f456e62c4fd" />
 
 
 ## Project Structure
