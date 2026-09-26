@@ -36,3 +36,4 @@ Thumbs.db
 -e 
 # Local env overrides
 .env
+kubeseal.tar.gz
