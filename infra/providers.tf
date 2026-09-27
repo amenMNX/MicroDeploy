@@ -1,4 +1,10 @@
 terraform {
+  cloud {
+    organization = "microdeploy"
+    workspaces {
+      name = "microdeploy"
+    }
+  }
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
