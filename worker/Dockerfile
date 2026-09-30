@@ -6,6 +6,9 @@ RUN pip install --user -r requirements.txt
 FROM python:3.12-slim 
 WORKDIR /app
 
+# Patch known-vulnerable OS packages ahead of the base image's own rebuild cadence
+RUN apt-get update && apt-get upgrade -y libssl3t64 openssl && rm -rf /var/lib/apt/lists/*
+
 RUN addgroup --system app && adduser --system --ingroup app app
 
 COPY --from=builder --chown=app:app /root/.local /home/app/.local
