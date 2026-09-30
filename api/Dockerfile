@@ -9,7 +9,8 @@ WORKDIR /app
 # Patch known-vulnerable OS packages ahead of the base image's own rebuild cadence
 RUN apt-get update && apt-get upgrade -y libssl3t64 openssl && rm -rf /var/lib/apt/lists/*
 
-RUN addgroup --system app && adduser --system --ingroup app app
+RUN addgroup --system app && adduser --system --ingroup app --home /home/app app
+ENV HOME=/home/app
 
 COPY --from=builder --chown=app:app /root/.local /home/app/.local
 ENV PATH=/home/app/.local/bin:$PATH
