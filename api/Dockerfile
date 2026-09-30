@@ -6,12 +6,13 @@ RUN pip install --user -r requirements.txt
 FROM python:3.12-slim
 WORKDIR /app
 
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
-COPY main.py .
+RUN addgroup --system app && adduser --system --ingroup app app
+
+COPY --from=builder --chown=app:app /root/.local /home/app/.local
+ENV PATH=/home/app/.local/bin:$PATH
+COPY --chown=app:app main.py .
 EXPOSE 8080
 
-RUN addgroup --system app && adduser --system --ingroup app app
 USER app
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
