@@ -3,18 +3,14 @@
 # -----------------------------------------------------------------------------
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: microdeploy
-
 resources:
   - ../base
-
 images:
   - name: ghcr.io/amenmnx/microdeploy-api
-    newTag: latest
+    newTag: 50a8bb1fb5166e390706dd00b52c0bde8575f60b
   - name: ghcr.io/amenmnx/microdeploy-worker
-    newTag: latest
-
+    newTag: 50a8bb1fb5166e390706dd00b52c0bde8575f60b
 patches:
   - patch: |-
       - op: replace
@@ -23,7 +19,6 @@ patches:
     target:
       kind: Deployment
       name: microdeploy-api
-
   - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/resources/limits/cpu
