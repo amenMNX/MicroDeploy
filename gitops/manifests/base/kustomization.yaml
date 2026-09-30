@@ -1,0 +1,21 @@
+# -----------------------------------------------------------------------------
+# Base layer -- shared across all environments
+# Lists every manifest that both dev and prod build on top of.
+# -----------------------------------------------------------------------------
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: microdeploy
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - sealed-secret.yaml
+  - db-pvc.yaml
+  - db-deployment.yaml
+  - db-service.yaml
+  - init-sql-configmap.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - api-servicemonitor.yaml
+  - worker-deployment.yaml

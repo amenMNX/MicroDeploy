@@ -1,0 +1,28 @@
+# -----------------------------------------------------------------------------
+# Prod overlay -- builds on base, 2 API replicas, tracks pinned release tags
+# (Shares the microdeploy namespace with dev -- this is a single local
+#  cluster, so full namespace isolation isn't needed. Only replica count
+#  and image tags differ between environments.)
+# -----------------------------------------------------------------------------
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: microdeploy
+
+resources:
+  - ../base
+
+images:
+  - name: ghcr.io/amenmnx/microdeploy-api
+    newTag: "v1.0.0"
+  - name: ghcr.io/amenmnx/microdeploy-worker
+    newTag: "v1.0.0"
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+    target:
+      kind: Deployment
+      name: microdeploy-api

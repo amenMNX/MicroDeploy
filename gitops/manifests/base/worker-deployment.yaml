@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microdeploy-worker
+  namespace: microdeploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: microdeploy-worker
+  template:
+    metadata:
+      labels:
+        app: microdeploy-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/amenmnx/microdeploy-worker:latest
+          imagePullPolicy: Always
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: microdeploy-config
+                  key: DB_HOST
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: microdeploy-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: microdeploy-config
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: microdeploy-secret
+                  key: DB_PASSWORD
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
