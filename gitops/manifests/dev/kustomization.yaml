@@ -6,6 +6,8 @@ kind: Kustomization
 namespace: microdeploy
 resources:
   - ../base
+  - namespace.yaml
+  - sealed-secret.yaml
 images:
   - name: ghcr.io/amenmnx/microdeploy-api
     newTag: 50a8bb1fb5166e390706dd00b52c0bde8575f60b

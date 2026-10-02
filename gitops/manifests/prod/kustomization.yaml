@@ -1,16 +1,25 @@
 # -----------------------------------------------------------------------------
 # Prod overlay -- builds on base, 2 API replicas, tracks pinned release tags
-# (Shares the microdeploy namespace with dev -- this is a single local
-#  cluster, so full namespace isolation isn't needed. Only replica count
-#  and image tags differ between environments.)
+# Own namespace (microdeploy-prod) so prod has its own real Postgres
+# instance/PVC/data, fully separate from dev. The one resource Kustomize's
+# namespace transformer can't rewrite automatically is the nested
+# spec.template.metadata.namespace inside sealed-secret.yaml (a SealedSecret
+# CRD quirk) -- prod/sealed-secret.yaml below is a prod-specific SealedSecret,
+# re-encrypted for this namespace with kubeseal, replacing base's copy.
 # -----------------------------------------------------------------------------
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: microdeploy
+namespace: microdeploy-prod
 
 resources:
   - ../base
+  - namespace.yaml
+  - sealed-secret.yaml   # prod-specific, re-sealed for microdeploy-prod
+                          # NOT YET CREATED -- must be generated with a real
+                          # kubeseal run against the live cluster (the
+                          # ciphertext is bound to namespace+name, so dev's
+                          # file cannot simply be copied/renamed). See below.
 
 images:
   - name: ghcr.io/amenmnx/microdeploy-api

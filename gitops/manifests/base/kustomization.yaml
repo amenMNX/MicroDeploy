@@ -8,9 +8,7 @@ kind: Kustomization
 namespace: microdeploy
 
 resources:
-  - namespace.yaml
   - configmap.yaml
-  - sealed-secret.yaml
   - db-pvc.yaml
   - db-deployment.yaml
   - db-service.yaml
@@ -19,3 +17,6 @@ resources:
   - api-service.yaml
   - api-servicemonitor.yaml
   - worker-deployment.yaml
+  # NOT here, supplied per-overlay instead:
+  #  - namespace.yaml   (hardcodes name: microdeploy -- prod needs its own)
+  #  - sealed-secret.yaml (namespace-scoped + nested-namespace Kustomize quirk)
