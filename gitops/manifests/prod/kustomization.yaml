@@ -15,17 +15,21 @@ namespace: microdeploy-prod
 resources:
   - ../base
   - namespace.yaml
-  - sealed-secret.yaml   # prod-specific, re-sealed for microdeploy-prod
+  - sealed-secret.yaml    # prod-specific, re-sealed for microdeploy-prod
                           # NOT YET CREATED -- must be generated with a real
                           # kubeseal run against the live cluster (the
                           # ciphertext is bound to namespace+name, so dev's
                           # file cannot simply be copied/renamed). See below.
 
 images:
+  # TEMP: pinned to a known-good commit SHA that's actually been built and
+  # pushed by CI. "v1.0.0" doesn't exist yet -- CI only pushes SHA tags
+  # right now, there's no release/tagging step. Swap this for a real
+  # version tag once that process exists.
   - name: ghcr.io/amenmnx/microdeploy-api
-    newTag: "v1.0.0"
+    newTag: "ee59aab1dbc5a86035fb714a06c76eb1e3f64ba4"
   - name: ghcr.io/amenmnx/microdeploy-worker
-    newTag: "v1.0.0"
+    newTag: "ee59aab1dbc5a86035fb714a06c76eb1e3f64ba4"
 
 patches:
   - patch: |-
