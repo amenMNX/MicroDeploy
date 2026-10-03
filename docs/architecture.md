@@ -3,8 +3,12 @@
 ## Overview
 
 MicroDeploy is a minimal multi-service backend application built to demonstrate
-end-to-end DevOps practices: containerization, CI/CD, Kubernetes orchestration,
-infrastructure as code, and observability.
+end-to-end DevOps practices: containerization, CI/CD, GitOps-based Kubernetes
+orchestration, multi-environment promotion, infrastructure as code, and observability.
+
+Deployment is **pull-based (GitOps)**, not push-based. CI never runs `kubectl apply`
+directly — it only updates Git, and ArgoCD, running inside the cluster, continuously
+reconciles the live cluster to match what's in Git.
 
 ## Components
 
@@ -12,95 +16,168 @@ infrastructure as code, and observability.
 |-----------|-----------|------|
 | API Service | FastAPI (Python) | Serves HTTP requests, writes tasks to PostgreSQL |
 | Worker Service | Python | Polls PostgreSQL, processes pending tasks |
-| Database | PostgreSQL 15 | Persistent task storage |
+| Database | PostgreSQL 15 | Persistent task storage — **one instance per environment** |
 | Container Runtime | Docker (multi-stage builds) | Packages each service into a portable image |
-| CI/CD | GitHub Actions | Lint, test, build, scan, push on every commit |
-| Image Registry | GitHub Container Registry (GHCR) | Stores versioned images |
+| CI | GitHub Actions | Lint, test, build, scan, push, auto-commit image tag |
+| CD | ArgoCD | Watches Git, auto-syncs the live cluster to match |
+| Image Registry | GitHub Container Registry (GHCR) | Stores versioned images, tagged by commit SHA |
 | Orchestration | Kubernetes (Rancher Desktop) | Deploys, scales, and manages containers |
+| Config management | Kustomize | `base/` + `dev/`/`prod/` overlays, no duplicated YAML |
+| Secrets | Sealed Secrets (`kubeseal`) | Encrypts secrets so they're safe to commit to Git |
 | IaC | Terraform + Helm | Provisions monitoring infrastructure declaratively |
-| Metrics | Prometheus + Grafana | Collects and visualises service metrics |
+| Metrics | Prometheus + Grafana | Collects and visualises service metrics per environment |
 | Logging | Loki + Promtail | Aggregates logs from all pods centrally |
+
+## Environments
+
+Dev and prod are **fully separate Kubernetes namespaces**, each with its own
+database, its own Sealed Secret, and its own set of pods. They do not share
+any live resource.
+
+| | Dev | Prod |
+|---|---|---|
+| Namespace | `microdeploy` | `microdeploy-prod` |
+| Git path | `gitops/manifests/dev` | `gitops/manifests/prod` |
+| Tracks | `main` (every commit) | git tag `v1.0.0` (moved deliberately) |
+| API replicas | 1 | 2 |
+| Sync | Automatic | Automatic, but only on tag move |
+
+Promotion to prod is a deliberate action, not automatic on every push:
+
+```powershell
+git tag -f v1.0.0 <commit-sha>
+git push origin v1.0.0 --force
+```
+
+This was a deliberate design choice after an early incident where both
+environments shared one namespace and one database, and ArgoCD's `selfHeal`
+on each environment's Application caused a sync loop (two Applications
+fighting over ownership of the same live objects). Separate namespaces,
+separate databases, and separate Sealed Secrets per environment resolved it.
 
 ## System Architecture Diagram
 
 ```
 Developer
     |
-    | git push
+    | git push (to main)
     v
-GitHub Actions (CI/CD Pipeline)
+GitHub Actions (CI Pipeline)
     |-- ruff lint (api + worker)
     |-- pytest (api + worker)
     |-- docker build (api + worker)
     |-- trivy scan (api + worker)
-    |-- docker push --> ghcr.io/amenmnx/microdeploy-api:latest
-                        ghcr.io/amenmnx/microdeploy-worker:latest
+    |-- docker push --> ghcr.io/amenmnx/microdeploy-api:<commit-sha>
+    |                   ghcr.io/amenmnx/microdeploy-worker:<commit-sha>
+    |
+    v
+[update-gitops job]
+    |-- edits gitops/manifests/dev/kustomization.yaml (newTag: <commit-sha>)
+    |-- commits back to main
                                         |
-                                        | kubectl apply
                                         v
-                          Kubernetes Cluster (Rancher Desktop)
-                          |
-                          |-- namespace: microdeploy
-                          |       |-- Deployment: microdeploy-api (2 replicas)
-                          |       |-- Deployment: microdeploy-worker (1 replica)
-                          |       |-- Deployment: microdeploy-db (1 replica)
-                          |       |-- Service: microdeploy-api
-                          |       |-- Service: microdeploy-db
-                          |       |-- ConfigMap: microdeploy-config
-                          |       |-- Secret: microdeploy-secret
-                          |       |-- ServiceMonitor: microdeploy-api
-                          |
-                          |-- namespace: monitoring
-                                  |-- Prometheus (scrapes /metrics every 15s)
-                                  |-- Grafana (dashboards on port 3000)
-                                  |-- Alertmanager
-                                  |-- Loki (log aggregation)
-                                  |-- Promtail (log collector DaemonSet)
+                         ArgoCD (running in-cluster, watches Git)
+                         |
+                         |-- api-dev    --> watches main,   syncs gitops/manifests/dev
+                         |-- api-prod   --> watches v1.0.0, syncs gitops/manifests/prod
+                         |   (generated by one ApplicationSet, not two hand-written files)
+                         v
+                   Kubernetes Cluster (Rancher Desktop)
+                   |
+                   |-- namespace: microdeploy (dev)
+                   |       |-- Deployment: microdeploy-api (1 replica)
+                   |       |-- Deployment: microdeploy-worker (1 replica)
+                   |       |-- Deployment: microdeploy-db (1 replica)
+                   |       |-- Service: microdeploy-api, microdeploy-db
+                   |       |-- ConfigMap: microdeploy-config, init-sql-config
+                   |       |-- SealedSecret: microdeploy-secret (sealed for this namespace)
+                   |       |-- ServiceMonitor: microdeploy-api
+                   |
+                   |-- namespace: microdeploy-prod (prod)
+                   |       |-- Deployment: microdeploy-api (2 replicas)
+                   |       |-- Deployment: microdeploy-worker (1 replica)
+                   |       |-- Deployment: microdeploy-db (1 replica, separate data from dev)
+                   |       |-- Service: microdeploy-api, microdeploy-db
+                   |       |-- ConfigMap: microdeploy-config, init-sql-config
+                   |       |-- SealedSecret: microdeploy-secret (sealed separately for this namespace)
+                   |       |-- ServiceMonitor: microdeploy-api
+                   |
+                   |-- namespace: argocd
+                   |       |-- ApplicationSet: api-appset (generates api-dev, api-prod)
+                   |
+                   |-- namespace: monitoring
+                           |-- Prometheus (scrapes /metrics every 15s, both namespaces)
+                           |-- Grafana (dashboards on port 3000, namespace-filterable)
+                           |-- Alertmanager
+                           |-- Loki (log aggregation)
+                           |-- Promtail (log collector DaemonSet)
 ```
 
 ## Data Flow
 
-### Request Flow
+### Request Flow (per environment)
 ```
 HTTP Client
     |
     v
-microdeploy-api Service (ClusterIP :8080)
+microdeploy-api Service (ClusterIP :8080, in either namespace)
     |
-    +--> Pod 1: microdeploy-api-xxxxx (FastAPI)
-    |       |-- POST /tasks --> INSERT into PostgreSQL
-    |       |-- GET  /tasks --> SELECT from PostgreSQL
-    |       |-- GET  /health --> 200 OK
+    +--> Pod: microdeploy-api-xxxxx (FastAPI)
+    |       |-- POST /tasks   --> INSERT into this environment's PostgreSQL
+    |       |-- GET  /tasks   --> SELECT from this environment's PostgreSQL
+    |       |-- GET  /health  --> 200 OK (hit continuously by k8s probes)
     |       |-- GET  /metrics --> Prometheus metrics
     |
-    +--> Pod 2: microdeploy-api-yyyyy (FastAPI)
+    +--> (prod only) Pod 2: microdeploy-api-yyyyy (FastAPI)
 ```
 
-### Task Processing Flow
+Dev and prod never share a database connection — each namespace's
+`microdeploy-db` is a distinct Postgres instance with its own PVC.
+
+### Task Processing Flow (per environment)
 ```
 POST /tasks  -->  tasks table (status=pending)
                         |
                         | every 3 seconds
                         v
-                  Worker Service
+                  Worker Service (same namespace)
                         |
                         v
                   tasks table (status=done)
 ```
 
+### GitOps Deployment Flow
+```
+git push to main
+    |
+    v
+CI builds, scans, pushes image; auto-commits new tag to dev overlay
+    |
+    v
+ArgoCD api-dev notices new commit on main --> auto-syncs --> dev pods updated
+
+(separately, when ready to release:)
+
+git tag -f v1.0.0 <sha>; git push origin v1.0.0 --force
+    |
+    v
+ArgoCD api-prod notices v1.0.0 now points elsewhere --> auto-syncs --> prod pods updated
+```
+
 ### Observability Flow
 ```
-API Pods (/metrics)
+API Pods, both namespaces (/metrics)
     |
     | scrape every 15s
     v
 Prometheus
     |
-    | query (PromQL)
+    | query (PromQL), filterable by namespace variable
     v
-Grafana Dashboards
+Grafana Dashboards (MicroDeploy API dashboard: request rate, p50/p95 latency,
+                     pod restarts, pods-up count — split dev vs prod)
 
-All Pod Logs
+All Pod Logs, both namespaces
     |
     | collect (Promtail DaemonSet)
     v
@@ -113,18 +190,28 @@ Grafana Explore
 
 ## Kubernetes Manifest Summary
 
-| File | Kind | Purpose |
+Manifests are organized as a Kustomize base + per-environment overlays, not
+one flat `k8s/` folder applied directly.
+
+| Path | Kind | Purpose |
 |------|------|---------|
-| namespace.yaml | Namespace | Isolates all app resources |
-| configmap.yaml | ConfigMap | Non-secret env vars (DB host, name, user) |
-| secret.yaml | Secret | DB password (base64 encoded) |
-| db-deployment.yaml | Deployment | PostgreSQL with readiness/liveness probes |
-| db-service.yaml | Service | Internal DNS for DB (microdeploy-db:5432) |
-| api-deployment.yaml | Deployment | FastAPI, 2 replicas, probes on /health |
-| api-service.yaml | Service | Exposes API internally with app label for Prometheus |
-| api-servicemonitor.yaml | ServiceMonitor | Tells Prometheus to scrape /metrics every 15s |
-| worker-deployment.yaml | Deployment | Background task processor, 1 replica |
-| init-sql-configmap.yaml | ConfigMap | Mounts init.sql into the Postgres container |
+| `gitops/manifests/base/configmap.yaml` | ConfigMap | Non-secret env vars (DB host, name, user) — shared base |
+| `gitops/manifests/base/db-*.yaml` | Deployment, Service, PVC | PostgreSQL — shared base, one instance deployed per overlay |
+| `gitops/manifests/base/api-*.yaml` | Deployment, Service, ServiceMonitor | FastAPI — shared base |
+| `gitops/manifests/base/worker-deployment.yaml` | Deployment | Background task processor — shared base |
+| `gitops/manifests/base/init-sql-configmap.yaml` | ConfigMap | Mounts init.sql into Postgres |
+| `gitops/manifests/dev/namespace.yaml` | Namespace | `microdeploy` — dev-owned, not in base |
+| `gitops/manifests/dev/sealed-secret.yaml` | SealedSecret | DB password, sealed for `microdeploy` |
+| `gitops/manifests/dev/kustomization.yaml` | Kustomization | Overlay: namespace `microdeploy`, 1 API replica |
+| `gitops/manifests/prod/namespace.yaml` | Namespace | `microdeploy-prod` — prod-owned, not in base |
+| `gitops/manifests/prod/sealed-secret.yaml` | SealedSecret | DB password, sealed separately for `microdeploy-prod` |
+| `gitops/manifests/prod/kustomization.yaml` | Kustomization | Overlay: namespace `microdeploy-prod`, 2 API replicas |
+| `gitops/apps/api-appset.yaml` | ApplicationSet | Generates `api-dev` and `api-prod` Applications from one template |
+
+`namespace.yaml` and `sealed-secret.yaml` are deliberately **not** in `base/` —
+each is namespace-specific (a Namespace object can't be renamed by Kustomize's
+namespace transformer, and a SealedSecret's ciphertext is cryptographically
+bound to the namespace it was sealed for), so dev and prod each keep their own copy.
 
 ## CI/CD Pipeline Stages
 
@@ -141,10 +228,19 @@ push to main
     |
     v (on success)
 [Job 2: build-scan-push]
-    |-- docker build api  --> microdeploy-api:<sha>
-    |-- docker build worker --> microdeploy-worker:<sha>
+    |-- docker build api    --> microdeploy-api:<commit-sha>
+    |-- docker build worker --> microdeploy-worker:<commit-sha>
     |-- trivy scan api image (HIGH/CRITICAL CVEs)
     |-- trivy scan worker image
-    |-- docker tag :latest
     |-- docker push to ghcr.io
+    |
+    v (on success)
+[Job 3: update-gitops]
+    |-- yq edits gitops/manifests/dev/kustomization.yaml newTag fields
+    |-- git commit + push back to main
+    |-- (ArgoCD picks this up independently — this job does not call kubectl)
 ```
+
+Note: this pipeline only ever updates the **dev** overlay automatically.
+Prod is promoted manually by moving the `v1.0.0` git tag — CI does not
+touch `gitops/manifests/prod/` at all.
