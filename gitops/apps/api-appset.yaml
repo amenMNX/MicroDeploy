@@ -1,0 +1,53 @@
+# -----------------------------------------------------------------------------
+# api-appset.yaml -- generates one Application per environment from a single
+# template, instead of hand-writing microdeploy-dev.yaml / microdeploy-prod.yaml
+# separately.
+#
+# Named api-dev / api-prod (not microdeploy-dev / microdeploy-prod) so this
+# can run SIDE BY SIDE with the existing hand-written Applications for
+# comparison, without a name collision. Once you trust this is working the
+# same way, delete gitops/apps/microdeploy-dev.yaml and
+# gitops/apps/microdeploy-prod.yaml and this becomes the only source.
+#
+# Note the targetRevision difference: dev tracks `main` (every commit goes
+# live automatically); prod tracks the git tag `v1.0.0` (nothing goes live
+# until you deliberately create/move that tag). This replaces the earlier
+# stopgap of pinning prod's image tag to a hardcoded commit SHA.
+# -----------------------------------------------------------------------------
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: api-appset
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: microdeploy
+            targetRevision: main
+          - env: prod
+            namespace: microdeploy-prod
+            targetRevision: v1.0.0
+
+  template:
+    metadata:
+      name: "api-{{env}}"
+    spec:
+      project: default
+
+      source:
+        repoURL: https://github.com/amenMNX/MicroDeploy.git
+        targetRevision: "{{targetRevision}}"
+        path: "gitops/manifests/{{env}}"
+
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=false
