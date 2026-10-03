@@ -10,9 +10,9 @@ resources:
   - sealed-secret.yaml
 images:
   - name: ghcr.io/amenmnx/microdeploy-api
-    newTag: 5001e3cca962d011e57ed573665042cd873a596b
+    newTag: d82b53c511dc6c1c023ac51bced4f8cf43901d87
   - name: ghcr.io/amenmnx/microdeploy-worker
-    newTag: 5001e3cca962d011e57ed573665042cd873a596b
+    newTag: d82b53c511dc6c1c023ac51bced4f8cf43901d87
 patches:
   - patch: |-
       - op: replace
